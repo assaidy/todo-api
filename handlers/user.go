@@ -1,13 +1,13 @@
 package handlers
 
-import "database/sql"
+import (
+	"github.com/assaidy/todo-api/models"
+)
 
 type UserHandler struct {
-	DB *sql.DB
+	Store models.Store
 }
 
-func NewUserHandler(db *sql.DB) *UserHandler {
-	return &UserHandler{
-		DB: db,
-	}
+func NewUserHandler(s models.Store) *UserHandler {
+	return &UserHandler{Store: s}
 }

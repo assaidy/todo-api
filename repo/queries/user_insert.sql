@@ -1,2 +1,3 @@
 INSERT INTO users (name, email, password) 
-VALUES (?, ?, ?);
+VALUES (?, ?, ?) 
+RETURNING id, joined_at;

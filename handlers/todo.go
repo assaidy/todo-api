@@ -1,13 +1,15 @@
 package handlers
 
-import "database/sql"
+import (
+	"github.com/assaidy/todo-api/models"
+)
 
 type TodoHandler struct {
-	DB *sql.DB
+	Store models.Store
 }
 
-func NewTodoHandler(db *sql.DB) *TodoHandler {
+func NewTodoHandler(s models.Store) *TodoHandler {
 	return &TodoHandler{
-		DB: db,
+		Store: s,
 	}
 }
