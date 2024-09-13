@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/assaidy/todo-api/models"
 	"github.com/assaidy/todo-api/utils"
@@ -32,29 +31,18 @@ func NewPostgresDB(conn string) (*PostgresDB, error) {
 	return &PostgresDB{DB: db}, nil
 }
 
-func (pg *PostgresDB) InsertUser(user *models.UserCreateOrUpdate) (*models.User, error) {
+func (pg *PostgresDB) InsertUser(user *models.User) error {
 	query, err := sqlFiles.ReadFile("user_insert.sql")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var (
-		userId   int64
-		joinedAt time.Time
-	)
-
-	err = pg.DB.QueryRow(string(query), user.Name, user.Email, user.Password).Scan(&userId, &joinedAt)
+	err = pg.DB.QueryRow(string(query), user.Name, user.Email, user.Password).Scan(&user.Id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &models.User{
-		Id:       userId,
-		Name:     user.Name,
-		Email:    user.Email,
-		Password: user.Password,
-		JoinedAt: joinedAt,
-	}, nil
+	return nil
 }
 
 func (pg *PostgresDB) GetUserById(id int64) (*models.User, error) {
@@ -78,7 +66,7 @@ func (pg *PostgresDB) GetUserById(id int64) (*models.User, error) {
 	return user, nil
 }
 
-func (pg *PostgresDB) UpdateUserById(id int64, user *models.UserCreateOrUpdate) error {
+func (pg *PostgresDB) UpdateUser(user *models.User) error {
 	query, err := sqlFiles.ReadFile("user_update_by_id.sql")
 	if err != nil {
 		return err
@@ -86,7 +74,7 @@ func (pg *PostgresDB) UpdateUserById(id int64, user *models.UserCreateOrUpdate) 
 
 	// NOTE: validate email in the handler first
 	// and check if email exists with pg.CheckEmailExists(email)
-	res, err := pg.DB.Exec(string(query), user.Name, user.Email, user.Password, id)
+	res, err := pg.DB.Exec(string(query), user.Name, user.Email, user.Password, user.Id)
 	if err != nil {
 		return err
 	}
@@ -96,7 +84,7 @@ func (pg *PostgresDB) UpdateUserById(id int64, user *models.UserCreateOrUpdate) 
 		return err
 	}
 	if affectedRows == 0 {
-		return utils.NotFoundError(fmt.Sprintf("no user with id %d found", id))
+		return utils.NotFoundError(fmt.Sprintf("no user with id %d found", user.Id))
 	}
 
 	return nil
@@ -142,3 +130,95 @@ func (pg *PostgresDB) CheckEmailExists(email string) (bool, error) {
 
 	return true, nil
 }
+
+func (pg *PostgresDB) InsertTodo(todo *models.Todo) error {
+	query, err := sqlFiles.ReadFile("todo_insert.sql")
+	if err != nil {
+		return err
+	}
+
+	// NOTE: validate title & status in the handler first
+	err = pg.DB.QueryRow(string(query), todo.UserId, todo.Title, todo.Description, todo.Status, todo.CreatedAt).Scan(&todo.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PostgresDB) UpdateTodo(todo *models.Todo) error {
+	query, err := sqlFiles.ReadFile("todo_update_by_id.sql")
+	if err != nil {
+		return err
+	}
+
+	// NOTE: validate title & status in the handler first
+	res, err := pg.DB.Exec(string(query), todo.Title, todo.Description, todo.Status, todo.Id)
+	if err != nil {
+		return err
+	}
+
+	affectedRows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affectedRows == 0 {
+		return utils.NotFoundError(fmt.Sprintf("no todo with id %d found", todo.Id))
+	}
+
+	return nil
+}
+
+func (pg *PostgresDB) DeleteTodoById(id int64) error {
+	query, err := sqlFiles.ReadFile("todo_delete_by_id.sql")
+	if err != nil {
+		return err
+	}
+
+	res, err := pg.DB.Exec(string(query), id)
+	if err != nil {
+		return err
+	}
+
+	affectedRows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affectedRows == 0 {
+		return utils.NotFoundError(fmt.Sprintf("no todo with id %d found", id))
+	}
+
+	return nil
+}
+
+// NOTE: result is sorted by the creation date (most recent first)
+func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
+	query, err := sqlFiles.ReadFile("todo_get_all_by_user_id")
+	if err != nil {
+		return nil, err
+	}
+
+	todos := []*models.Todo{}
+
+	rows, err := pg.DB.Query(string(query), uid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		t := models.Todo{UserId: uid}
+		if err := rows.Scan(&t.Id, &t.Title, &t.Description, &t.Status, &t.CreatedAt); err != nil {
+			return nil, err
+		}
+		todos = append(todos, &t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return todos, nil
+}
+
+// TODO: get all todos in pages + filtering

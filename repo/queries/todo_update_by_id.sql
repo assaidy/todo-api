@@ -1,5 +1,6 @@
 UPDATE todos
 SET 
     title = ?,
-    description = ?
+    description = ?,
+    status = ?
 WHERE id = ?;

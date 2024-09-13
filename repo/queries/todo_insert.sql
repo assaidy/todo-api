@@ -1,2 +1,3 @@
-INSERT INTO todos (user_id, title, content, status)
-values (?, ?, ?, ?);
+INSERT INTO todos (user_id, title, description, status, created_at)
+VALUES (?, ?, ?, ?, ?)
+RETURNING id;

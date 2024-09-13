@@ -10,7 +10,7 @@ type User struct {
 	JoinedAt time.Time `json:"joinedAt"`
 }
 
-type UserCreateOrUpdate struct {
+type UserCreateOrUpdateRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
