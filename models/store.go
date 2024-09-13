@@ -11,4 +11,5 @@ type Store interface {
 	UpdateTodo(*Todo) error
 	DeleteTodoById(int64) error
 	GetAllTodosByUserId(int64) ([]*Todo, error)
+	CheckUserOwnsTodo(int64, int64) (bool, error)
 }

@@ -118,9 +118,7 @@ func (pg *PostgresDB) CheckEmailExists(email string) (bool, error) {
 		return false, err
 	}
 
-	var emailExists int
-
-	err = pg.DB.QueryRow(string(query), email).Scan(&emailExists)
+	err = pg.DB.QueryRow(string(query), email).Scan(new(int))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
@@ -193,7 +191,7 @@ func (pg *PostgresDB) DeleteTodoById(id int64) error {
 
 // NOTE: result is sorted by the creation date (most recent first)
 func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
-	query, err := sqlFiles.ReadFile("todo_get_all_by_user_id")
+	query, err := sqlFiles.ReadFile("todo_get_all_by_user_id.sql")
 	if err != nil {
 		return nil, err
 	}
@@ -222,3 +220,20 @@ func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
 }
 
 // TODO: get all todos in pages + filtering
+
+func (pg *PostgresDB) CheckUserOwnsTodo(tid, uid int64) (bool, error) {
+	query, err := sqlFiles.ReadFile("todo_check_owner.sql")
+	if err != nil {
+		return false, err
+	}
+
+	err = pg.DB.QueryRow(string(query), tid, uid).Scan(new(int))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
