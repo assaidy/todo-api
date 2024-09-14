@@ -28,12 +28,29 @@ func Make(f ApiFunc) http.HandlerFunc {
 }
 
 func WriteJSON(w http.ResponseWriter, status int, v any) error {
+	if status == http.StatusNoContent {
+		w.WriteHeader(status)
+		return nil
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		slog.Error("Failed to encode JSON response", "err", err.Error())
-		return err
+
+	if v != nil {
+		if err := json.NewEncoder(w).Encode(v); err != nil {
+			slog.Error("Failed to encode JSON response", "err", err.Error())
+			return err
+		}
 	}
+
+	return nil
+}
+
+func ParseJSON(r *http.Request, v any) error {
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		return InvalidJSONError()
+	}
+	defer r.Body.Close()
 
 	return nil
 }

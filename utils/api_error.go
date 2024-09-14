@@ -36,3 +36,11 @@ func NotFoundError(msg string) ApiError {
 func AlreadyExistsError(msg string) ApiError {
 	return NewApiError(http.StatusBadRequest, msg)
 }
+
+func ForbiddenError() ApiError {
+	return NewApiError(http.StatusForbidden, "Forbidden")
+}
+
+func UnauthorizedError() ApiError {
+	return NewApiError(http.StatusUnauthorized, "Unauthorized")
+}
