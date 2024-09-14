@@ -7,10 +7,12 @@ type Store interface {
 	UpdateUser(*User) error
 	DeleteUserById(int64) error
 	CheckEmailExists(string) (bool, error)
+	CheckUserIdExists(int64) (bool, error)
 
 	InsertTodo(*Todo) error
 	UpdateTodo(*Todo) error
 	DeleteTodoByIdAndUserId(int64, int64) error
+	DeleteAllTodoByUserId(int64) error
 	GetAllTodosByUserId(int64) ([]*Todo, error)
 	// CheckUserOwnsTodo(int64, int64) (bool, error)
 }

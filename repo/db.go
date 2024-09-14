@@ -144,6 +144,23 @@ func (pg *PostgresDB) CheckEmailExists(email string) (bool, error) {
 	return true, nil
 }
 
+func (pg *PostgresDB) CheckUserIdExists(id int64) (bool, error) {
+	query, err := sqlFiles.ReadFile("queries/user_check_id_exists.sql")
+	if err != nil {
+		return false, err
+	}
+
+	err = pg.DB.QueryRow(string(query), id).Scan(new(int))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (pg *PostgresDB) InsertTodo(todo *models.Todo) error {
 	query, err := sqlFiles.ReadFile("queries/todo_insert.sql")
 	if err != nil {
@@ -204,6 +221,29 @@ func (pg *PostgresDB) DeleteTodoByIdAndUserId(tid, uid int64) error {
 	return nil
 }
 
+func (pg *PostgresDB) DeleteAllTodoByUserId(uid int64) error {
+	query, err := sqlFiles.ReadFile("queries/todo_delete_all_by_user_id.sql")
+	if err != nil {
+		return err
+	}
+
+	// res, err := pg.DB.Exec(string(query), uid)
+	_, err = pg.DB.Exec(string(query), uid)
+	if err != nil {
+		return err
+	}
+
+	// affectedRows, err := res.RowsAffected()
+	// if err != nil {
+	// 	return err
+	// }
+	// if affectedRows == 0 {
+	// 	return utils.NotFoundError(fmt.Sprintf("no todos found for user with id %d", uid))
+	// }
+
+	return nil
+}
+
 // NOTE: result is sorted by the creation date (most recent first)
 func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
 	query, err := sqlFiles.ReadFile("queries/todo_get_all_by_user_id.sql")
@@ -233,8 +273,6 @@ func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
 
 	return todos, nil
 }
-
-// TODO: get all todos in pages + filtering
 
 // func (pg *PostgresDB) CheckUserOwnsTodo(tid, uid int64) (bool, error) {
 // 	query, err := sqlFiles.ReadFile("queries/todo_check_owner.sql")
