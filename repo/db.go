@@ -32,7 +32,7 @@ func NewPostgresDB(conn string) (*PostgresDB, error) {
 }
 
 func (pg *PostgresDB) InsertUser(user *models.User) error {
-	query, err := sqlFiles.ReadFile("user_insert.sql")
+	query, err := sqlFiles.ReadFile("queries/user_insert.sql")
 	if err != nil {
 		return err
 	}
@@ -46,16 +46,14 @@ func (pg *PostgresDB) InsertUser(user *models.User) error {
 }
 
 func (pg *PostgresDB) GetUserById(id int64) (*models.User, error) {
-	query, err := sqlFiles.ReadFile("user_get_by_id.sql")
+	query, err := sqlFiles.ReadFile("queries/user_get_by_id.sql")
 	if err != nil {
 		return nil, err
 	}
 
 	user := &models.User{Id: id}
 
-	// NOTE: validate email in the handler first
-	// and check if email exists with pg.CheckEmailExists(email)
-	err = pg.DB.QueryRow(string(query), id).Scan(&user.Name, &user.Email, &user.JoinedAt)
+	err = pg.DB.QueryRow(string(query), id).Scan(&user.Name, &user.Email, &user.Password, &user.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.NotFoundError(fmt.Sprintf("no user with id %d found", id))
@@ -66,14 +64,31 @@ func (pg *PostgresDB) GetUserById(id int64) (*models.User, error) {
 	return user, nil
 }
 
+func (pg *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
+	query, err := sqlFiles.ReadFile("queries/user_get_by_email.sql")
+	if err != nil {
+		return nil, err
+	}
+
+	user := &models.User{Email: email}
+
+	err = pg.DB.QueryRow(string(query), email).Scan(&user.Id, &user.Name, &user.Password, &user.JoinedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, utils.NotFoundError(fmt.Sprintf("no user with email '%s' found", email))
+		}
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (pg *PostgresDB) UpdateUser(user *models.User) error {
-	query, err := sqlFiles.ReadFile("user_update_by_id.sql")
+	query, err := sqlFiles.ReadFile("queries/user_update_by_id.sql")
 	if err != nil {
 		return err
 	}
 
-	// NOTE: validate email in the handler first
-	// and check if email exists with pg.CheckEmailExists(email)
 	res, err := pg.DB.Exec(string(query), user.Name, user.Email, user.Password, user.Id)
 	if err != nil {
 		return err
@@ -91,7 +106,7 @@ func (pg *PostgresDB) UpdateUser(user *models.User) error {
 }
 
 func (pg *PostgresDB) DeleteUserById(id int64) error {
-	query, err := sqlFiles.ReadFile("user_delete_by_id.sql")
+	query, err := sqlFiles.ReadFile("queries/user_delete_by_id.sql")
 	if err != nil {
 		return err
 	}
@@ -113,7 +128,7 @@ func (pg *PostgresDB) DeleteUserById(id int64) error {
 }
 
 func (pg *PostgresDB) CheckEmailExists(email string) (bool, error) {
-	query, err := sqlFiles.ReadFile("user_check_email_exists.sql")
+	query, err := sqlFiles.ReadFile("queries/user_check_email_exists.sql")
 	if err != nil {
 		return false, err
 	}
@@ -130,7 +145,7 @@ func (pg *PostgresDB) CheckEmailExists(email string) (bool, error) {
 }
 
 func (pg *PostgresDB) InsertTodo(todo *models.Todo) error {
-	query, err := sqlFiles.ReadFile("todo_insert.sql")
+	query, err := sqlFiles.ReadFile("queries/todo_insert.sql")
 	if err != nil {
 		return err
 	}
@@ -145,13 +160,13 @@ func (pg *PostgresDB) InsertTodo(todo *models.Todo) error {
 }
 
 func (pg *PostgresDB) UpdateTodo(todo *models.Todo) error {
-	query, err := sqlFiles.ReadFile("todo_update_by_id.sql")
+	query, err := sqlFiles.ReadFile("queries/todo_update_by_id.sql")
 	if err != nil {
 		return err
 	}
 
 	// NOTE: validate title & status in the handler first
-	res, err := pg.DB.Exec(string(query), todo.Title, todo.Description, todo.Status, todo.Id)
+	res, err := pg.DB.Exec(string(query), todo.Title, todo.Description, todo.Status, todo.Id, todo.UserId)
 	if err != nil {
 		return err
 	}
@@ -167,13 +182,13 @@ func (pg *PostgresDB) UpdateTodo(todo *models.Todo) error {
 	return nil
 }
 
-func (pg *PostgresDB) DeleteTodoById(id int64) error {
-	query, err := sqlFiles.ReadFile("todo_delete_by_id.sql")
+func (pg *PostgresDB) DeleteTodoByIdAndUserId(tid, uid int64) error {
+	query, err := sqlFiles.ReadFile("queries/todo_delete_by_id.sql")
 	if err != nil {
 		return err
 	}
 
-	res, err := pg.DB.Exec(string(query), id)
+	res, err := pg.DB.Exec(string(query), tid, uid)
 	if err != nil {
 		return err
 	}
@@ -183,7 +198,7 @@ func (pg *PostgresDB) DeleteTodoById(id int64) error {
 		return err
 	}
 	if affectedRows == 0 {
-		return utils.NotFoundError(fmt.Sprintf("no todo with id %d found", id))
+		return utils.NotFoundError(fmt.Sprintf("no todo with id %d found for user with id %d", tid, uid))
 	}
 
 	return nil
@@ -191,7 +206,7 @@ func (pg *PostgresDB) DeleteTodoById(id int64) error {
 
 // NOTE: result is sorted by the creation date (most recent first)
 func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
-	query, err := sqlFiles.ReadFile("todo_get_all_by_user_id.sql")
+	query, err := sqlFiles.ReadFile("queries/todo_get_all_by_user_id.sql")
 	if err != nil {
 		return nil, err
 	}
@@ -221,19 +236,19 @@ func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
 
 // TODO: get all todos in pages + filtering
 
-func (pg *PostgresDB) CheckUserOwnsTodo(tid, uid int64) (bool, error) {
-	query, err := sqlFiles.ReadFile("todo_check_owner.sql")
-	if err != nil {
-		return false, err
-	}
+// func (pg *PostgresDB) CheckUserOwnsTodo(tid, uid int64) (bool, error) {
+// 	query, err := sqlFiles.ReadFile("queries/todo_check_owner.sql")
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	err = pg.DB.QueryRow(string(query), tid, uid).Scan(new(int))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
+// 	err = pg.DB.QueryRow(string(query), tid, uid).Scan(new(int))
+// 	if err != nil {
+// 		if errors.Is(err, sql.ErrNoRows) {
+// 			return false, nil
+// 		}
+// 		return false, err
+// 	}
 
-	return true, nil
-}
+// 	return true, nil
+// }

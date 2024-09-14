@@ -1,6 +1,6 @@
 UPDATE todos
 SET 
-    title = ?,
-    description = ?,
-    status = ?
-WHERE id = ?;
+    title = $1,
+    description = $2,
+    status = $3
+WHERE id = $4 AND user_id = $5;

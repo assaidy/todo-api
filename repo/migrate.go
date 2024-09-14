@@ -11,7 +11,7 @@ import (
 // It reads each SQL file and executes its contents against the provided database connection.
 func Migrate(db *sql.DB) error {
 	// Find all migration files in the specified directory.
-	migrationFiles, err := filepath.Glob("./db/migrations/*.sql")
+	migrationFiles, err := filepath.Glob("repo/migrations/*.sql")
 	if err != nil {
 		return fmt.Errorf("failed to list migration files: %w", err)
 	}

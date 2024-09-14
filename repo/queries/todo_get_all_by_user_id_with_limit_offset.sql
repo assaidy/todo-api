@@ -7,7 +7,7 @@ SELECT
     created_at,
     status
 FROM todos
-WHERE user_id = ?
+WHERE user_id = $1
 ORDER BY created_at DESC -- newest first
-LIMIT ?
-OFFSET ?;
+LIMIT $2
+OFFSET $3;

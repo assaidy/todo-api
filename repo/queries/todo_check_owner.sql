@@ -1,4 +1,4 @@
 SELECT 1
 FROM todo
-WHERE id = ? AND user_id = ?
+WHERE id = $1 AND user_id = $2
 LIMIT 1;

@@ -15,19 +15,19 @@ func NewRouter(s models.Store) http.Handler {
 	protected.Use(utils.WithJWT)
 
 	userH := handlers.NewUserHandler(s)
-	todoH := handlers.NewTodoHandler(s)
+	// todoH := handlers.NewTodoHandler(s)
 
-	protected.HandleFunc("/register", utils.Make(userH.HandleRegisterUser)).Methods("POST")
-	protected.HandleFunc("/login", utils.Make(userH.HandleLoginUser)).Methods("POST")
-	protected.HandleFunc("/users/{id:[0-9+]}", utils.Make(userH.HandleGetUserById)).Methods("GET")
+	router.HandleFunc("/register", utils.Make(userH.HandleRegisterUser)).Methods("POST")
+	router.HandleFunc("/login", utils.Make(userH.HandleLoginUser)).Methods("POST")
 
 	protected.HandleFunc("/users/{id:[0-9+]}", utils.Make(userH.HandleDeleteUserById)).Methods("DELETE")
-	protected.HandleFunc("/todos", utils.Make(todoH.HandleGetAllTodos)).Methods("GET")
-	protected.HandleFunc("/todos", utils.Make(todoH.HandleDeleteAllTodos)).Methods("DELETE")
-	protected.HandleFunc("/todos", utils.Make(todoH.HandleCreateTodo)).Methods("POST")
-	// protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleGetTodoById)).Methods("GET")
-	protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleUpdateTodoById)).Methods("PUT")
-	protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleDeleteTodoById)).Methods("DELETE")
+	protected.HandleFunc("/users/{id:[0-9+]}", utils.Make(userH.HandleUpdateUserById)).Methods("PUT")
+	// protected.HandleFunc("/todos", utils.Make(todoH.HandleGetAllTodos)).Methods("GET")
+	// protected.HandleFunc("/todos", utils.Make(todoH.HandleDeleteAllTodos)).Methods("DELETE")
+	// protected.HandleFunc("/todos", utils.Make(todoH.HandleCreateTodo)).Methods("POST")
+	// // protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleGetTodoById)).Methods("GET")
+	// protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleUpdateTodoById)).Methods("PUT")
+	// protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleDeleteTodoById)).Methods("DELETE")
 
 	return router
 }

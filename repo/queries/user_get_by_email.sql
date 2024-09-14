@@ -1,7 +1,7 @@
 SELECT 
+    id,
     name,
-    email,
     password,
     joined_at
 FROM users
-WHERE id = $1;
+WHERE email = $1;
