@@ -24,13 +24,13 @@ func main() {
 		config.DBName,
 	)
 
-	pg, err := repo.NewPostgresDB(dbConn)
+	repo, err := repo.New(dbConn)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer pg.DB.Close()
+	defer repo.DB.Close()
 
-	router := router.NewRouter(pg)
+	router := router.NewRouter(repo)
 
 	log.Println("Running server on port %s", config.Port)
 	log.Fatal(http.ListenAndServe(config.Port, router))

@@ -2,20 +2,23 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/assaidy/todo-api/models"
+	"github.com/assaidy/todo-api/repo"
 	"github.com/assaidy/todo-api/utils"
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/mux"
 )
 
 type TodoHandler struct {
-	Store models.Store
+	repo *repo.Repo
 }
 
-func NewTodoHandler(s models.Store) *TodoHandler {
+func NewTodoHandler(r *repo.Repo) *TodoHandler {
 	return &TodoHandler{
-		Store: s,
+		repo: r,
 	}
 }
 
@@ -26,7 +29,7 @@ func (h *TodoHandler) HandleCreateTodo(w http.ResponseWriter, r *http.Request) e
 	}
 
 	// check if there's a user with that id
-	if exists, err := h.Store.CheckUserIdExists(userId); err != nil {
+	if exists, err := h.repo.CheckUserIdExists(userId); err != nil {
 		return err
 	} else if !exists {
 		return utils.ForbiddenError()
@@ -54,7 +57,7 @@ func (h *TodoHandler) HandleCreateTodo(w http.ResponseWriter, r *http.Request) e
 		CreatedAt:   time.Now().UTC(),
 	}
 
-	if err := h.Store.InsertTodo(&todo); err != nil {
+	if err := h.repo.InsertTodo(&todo); err != nil {
 		return err
 	}
 
@@ -68,13 +71,13 @@ func (h *TodoHandler) HandleGetAllTodosByUser(w http.ResponseWriter, r *http.Req
 	}
 
 	// check if there's a user with that id
-	if exists, err := h.Store.CheckUserIdExists(userId); err != nil {
+	if exists, err := h.repo.CheckUserIdExists(userId); err != nil {
 		return err
 	} else if !exists {
 		return utils.ForbiddenError()
 	}
 
-	todos, err := h.Store.GetAllTodosByUserId(userId)
+	todos, err := h.repo.GetAllTodosByUserId(userId)
 	if err != nil {
 		return err
 	}
@@ -89,15 +92,72 @@ func (h *TodoHandler) HandleDeleteAllTodosByUser(w http.ResponseWriter, r *http.
 	}
 
 	// check if there's a user with that id
-	if exists, err := h.Store.CheckUserIdExists(userId); err != nil {
+	if exists, err := h.repo.CheckUserIdExists(userId); err != nil {
 		return err
 	} else if !exists {
 		return utils.ForbiddenError()
 	}
 
-	if err := h.Store.DeleteAllTodoByUserId(userId); err != nil {
+	if err := h.repo.DeleteAllTodoByUserId(userId); err != nil {
 		return err
 	}
 
 	return utils.WriteJSON(w, http.StatusNoContent, nil)
+}
+
+func (h *TodoHandler) HandleDeleteTodoById(w http.ResponseWriter, r *http.Request) error {
+	userId, ok := utils.GetUserIdFromContext(r.Context())
+	if !ok {
+		return utils.ForbiddenError()
+	}
+
+	// check if there's a user with that id
+	if exists, err := h.repo.CheckUserIdExists(userId); err != nil {
+		return err
+	} else if !exists {
+		return utils.ForbiddenError()
+	}
+
+	todoId, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	if err := h.repo.DeleteTodoByIdAndUserId(int64(todoId), userId); err != nil {
+		return err
+	}
+
+	return utils.WriteJSON(w, http.StatusNoContent, nil)
+}
+
+func (h *TodoHandler) HandleUpdateTodoById(w http.ResponseWriter, r *http.Request) error {
+	userId, ok := utils.GetUserIdFromContext(r.Context())
+	if !ok {
+		return utils.ForbiddenError()
+	}
+
+	// check if there's a user with that id
+	if exists, err := h.repo.CheckUserIdExists(userId); err != nil {
+		return err
+	} else if !exists {
+		return utils.ForbiddenError()
+	}
+
+	todoId, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	req := models.TodoCreateOrUpdateRequest{}
+	if err := utils.ParseJSON(r, &req); err != nil {
+		return err
+	}
+
+	todo := models.Todo{
+		Id:          int64(todoId),
+		UserId:      userId,
+		Title:       req.Title,
+		Description: req.Description,
+		Status:      req.Status,
+	}
+
+	if err := h.repo.UpdateTodo(&todo); err != nil {
+		return err
+	}
+
+	return utils.WriteJSON(w, http.StatusOK, &todo)
 }

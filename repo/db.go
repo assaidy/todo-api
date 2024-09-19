@@ -2,7 +2,6 @@ package repo
 
 import (
 	"database/sql"
-	"embed"
 	"errors"
 	"fmt"
 
@@ -11,14 +10,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-//go:embed queries/*.sql
-var sqlFiles embed.FS
-
-type PostgresDB struct {
+type Repo struct {
 	DB *sql.DB
 }
 
-func NewPostgresDB(conn string) (*PostgresDB, error) {
+func New(conn string) (*Repo, error) {
 	db, err := sql.Open("postgres", conn)
 	if err != nil {
 		return nil, err
@@ -28,16 +24,11 @@ func NewPostgresDB(conn string) (*PostgresDB, error) {
 		return nil, err
 	}
 
-	return &PostgresDB{DB: db}, nil
+	return &Repo{DB: db}, nil
 }
 
-func (pg *PostgresDB) InsertUser(user *models.User) error {
-	query, err := sqlFiles.ReadFile("queries/user_insert.sql")
-	if err != nil {
-		return err
-	}
-
-	err = pg.DB.QueryRow(string(query), user.Name, user.Email, user.Password).Scan(&user.Id)
+func (r *Repo) InsertUser(user *models.User) error {
+    err := r.DB.QueryRow(QOInsertUser, user.Name, user.Email, user.Password).Scan(&user.Id)
 	if err != nil {
 		return err
 	}
@@ -45,15 +36,10 @@ func (pg *PostgresDB) InsertUser(user *models.User) error {
 	return nil
 }
 
-func (pg *PostgresDB) GetUserById(id int64) (*models.User, error) {
-	query, err := sqlFiles.ReadFile("queries/user_get_by_id.sql")
-	if err != nil {
-		return nil, err
-	}
-
+func (r *Repo) GetUserById(id int64) (*models.User, error) {
 	user := &models.User{Id: id}
 
-	err = pg.DB.QueryRow(string(query), id).Scan(&user.Name, &user.Email, &user.Password, &user.JoinedAt)
+    err := r.DB.QueryRow(QMGetUserById, id).Scan(&user.Name, &user.Email, &user.Password, &user.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.NotFoundError(fmt.Sprintf("no user with id %d found", id))
@@ -64,15 +50,10 @@ func (pg *PostgresDB) GetUserById(id int64) (*models.User, error) {
 	return user, nil
 }
 
-func (pg *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
-	query, err := sqlFiles.ReadFile("queries/user_get_by_email.sql")
-	if err != nil {
-		return nil, err
-	}
-
+func (r *Repo) GetUserByEmail(email string) (*models.User, error) {
 	user := &models.User{Email: email}
 
-	err = pg.DB.QueryRow(string(query), email).Scan(&user.Id, &user.Name, &user.Password, &user.JoinedAt)
+    err := r.DB.QueryRow(QMGetUserByEmail, email).Scan(&user.Id, &user.Name, &user.Password, &user.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.NotFoundError(fmt.Sprintf("no user with email '%s' found", email))
@@ -83,13 +64,8 @@ func (pg *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
-func (pg *PostgresDB) UpdateUser(user *models.User) error {
-	query, err := sqlFiles.ReadFile("queries/user_update_by_id.sql")
-	if err != nil {
-		return err
-	}
-
-	res, err := pg.DB.Exec(string(query), user.Name, user.Email, user.Password, user.Id)
+func (r *Repo) UpdateUser(user *models.User) error {
+	res, err := r.DB.Exec(QEUpdateUser, user.Name, user.Email, user.Password, user.Id)
 	if err != nil {
 		return err
 	}
@@ -105,13 +81,8 @@ func (pg *PostgresDB) UpdateUser(user *models.User) error {
 	return nil
 }
 
-func (pg *PostgresDB) DeleteUserById(id int64) error {
-	query, err := sqlFiles.ReadFile("queries/user_delete_by_id.sql")
-	if err != nil {
-		return err
-	}
-
-	res, err := pg.DB.Exec(string(query), id)
+func (r *Repo) DeleteUserById(id int64) error {
+	res, err := r.DB.Exec(QEDeleteUser, id)
 	if err != nil {
 		return err
 	}
@@ -127,13 +98,8 @@ func (pg *PostgresDB) DeleteUserById(id int64) error {
 	return nil
 }
 
-func (pg *PostgresDB) CheckEmailExists(email string) (bool, error) {
-	query, err := sqlFiles.ReadFile("queries/user_check_email_exists.sql")
-	if err != nil {
-		return false, err
-	}
-
-	err = pg.DB.QueryRow(string(query), email).Scan(new(int))
+func (r *Repo) CheckEmailExists(email string) (bool, error) {
+    err := r.DB.QueryRow(QOCheckEmailExists, email).Scan(new(int))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
@@ -144,13 +110,8 @@ func (pg *PostgresDB) CheckEmailExists(email string) (bool, error) {
 	return true, nil
 }
 
-func (pg *PostgresDB) CheckUserIdExists(id int64) (bool, error) {
-	query, err := sqlFiles.ReadFile("queries/user_check_id_exists.sql")
-	if err != nil {
-		return false, err
-	}
-
-	err = pg.DB.QueryRow(string(query), id).Scan(new(int))
+func (r *Repo) CheckUserIdExists(id int64) (bool, error) {
+    err := r.DB.QueryRow(QOCheckUserIdExists, id).Scan(new(int))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
@@ -161,14 +122,8 @@ func (pg *PostgresDB) CheckUserIdExists(id int64) (bool, error) {
 	return true, nil
 }
 
-func (pg *PostgresDB) InsertTodo(todo *models.Todo) error {
-	query, err := sqlFiles.ReadFile("queries/todo_insert.sql")
-	if err != nil {
-		return err
-	}
-
-	// NOTE: validate title & status in the handler first
-	err = pg.DB.QueryRow(string(query), todo.UserId, todo.Title, todo.Description, todo.Status, todo.CreatedAt).Scan(&todo.Id)
+func (r *Repo) InsertTodo(todo *models.Todo) error {
+    err := r.DB.QueryRow(QOInsertTodo, todo.UserId, todo.Title, todo.Description, todo.Status, todo.CreatedAt).Scan(&todo.Id)
 	if err != nil {
 		return err
 	}
@@ -176,14 +131,8 @@ func (pg *PostgresDB) InsertTodo(todo *models.Todo) error {
 	return nil
 }
 
-func (pg *PostgresDB) UpdateTodo(todo *models.Todo) error {
-	query, err := sqlFiles.ReadFile("queries/todo_update_by_id.sql")
-	if err != nil {
-		return err
-	}
-
-	// NOTE: validate title & status in the handler first
-	res, err := pg.DB.Exec(string(query), todo.Title, todo.Description, todo.Status, todo.Id, todo.UserId)
+func (r *Repo) UpdateTodo(todo *models.Todo) error {
+	res, err := r.DB.Exec(QEUpdateTodo, todo.Title, todo.Description, todo.Status, todo.Id, todo.UserId)
 	if err != nil {
 		return err
 	}
@@ -199,13 +148,8 @@ func (pg *PostgresDB) UpdateTodo(todo *models.Todo) error {
 	return nil
 }
 
-func (pg *PostgresDB) DeleteTodoByIdAndUserId(tid, uid int64) error {
-	query, err := sqlFiles.ReadFile("queries/todo_delete_by_id.sql")
-	if err != nil {
-		return err
-	}
-
-	res, err := pg.DB.Exec(string(query), tid, uid)
+func (r *Repo) DeleteTodoByIdAndUserId(tid, uid int64) error {
+	res, err := r.DB.Exec(QEDeleteTodo, tid, uid)
 	if err != nil {
 		return err
 	}
@@ -221,14 +165,8 @@ func (pg *PostgresDB) DeleteTodoByIdAndUserId(tid, uid int64) error {
 	return nil
 }
 
-func (pg *PostgresDB) DeleteAllTodoByUserId(uid int64) error {
-	query, err := sqlFiles.ReadFile("queries/todo_delete_all_by_user_id.sql")
-	if err != nil {
-		return err
-	}
-
-	// res, err := pg.DB.Exec(string(query), uid)
-	_, err = pg.DB.Exec(string(query), uid)
+func (r *Repo) DeleteAllTodoByUserId(uid int64) error {
+    _, err := r.DB.Exec(QEDeleteAllTodosByUser, uid)
 	if err != nil {
 		return err
 	}
@@ -245,15 +183,10 @@ func (pg *PostgresDB) DeleteAllTodoByUserId(uid int64) error {
 }
 
 // NOTE: result is sorted by the creation date (most recent first)
-func (pg *PostgresDB) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
-	query, err := sqlFiles.ReadFile("queries/todo_get_all_by_user_id.sql")
-	if err != nil {
-		return nil, err
-	}
-
+func (r *Repo) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
 	todos := []*models.Todo{}
 
-	rows, err := pg.DB.Query(string(query), uid)
+	rows, err := r.DB.Query(QMGetAllTodosByUser, uid)
 	if err != nil {
 		return nil, err
 	}

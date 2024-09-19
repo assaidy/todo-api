@@ -2,7 +2,7 @@ BIN_DIR = bin
 BIN_FILE = api-server
 CMD_DIR = cmd
 CMD_FILE = main.go
-GOOSE_SETTINGS = GOOSE_DRIVER=postgres GOOSE_DBSTRING="user=postgres dbname=todo_api sslmode=disable" GOOSE_MIGRATION_DIR="db/migrations"
+GOOSE_SETTINGS = GOOSE_DRIVER=postgres GOOSE_DBSTRING="user=postgres dbname=todo_api sslmode=disable" GOOSE_MIGRATION_DIR="repo/migrations"
 
 all: build
 
