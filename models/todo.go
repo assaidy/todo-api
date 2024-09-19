@@ -3,8 +3,8 @@ package models
 import "time"
 
 type Todo struct {
-	Id          int64     `json:"id"`
-	UserId      int64     `json:"userId"`
+	Id          int       `json:"id"`
+	UserId      int       `json:"userId"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Status      string    `json:"status"`

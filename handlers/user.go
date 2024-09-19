@@ -108,7 +108,7 @@ func (h *UserHandler) HandleLoginUser(w http.ResponseWriter, r *http.Request) er
 func (h *UserHandler) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) error {
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	user, err := h.repo.GetUserById(int64(id))
+	user, err := h.repo.GetUserById(id)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (h *UserHandler) HandleUpdateUserById(w http.ResponseWriter, r *http.Reques
 func (h *UserHandler) HandleDeleteUserById(w http.ResponseWriter, r *http.Request) error {
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	user, err := h.repo.GetUserById(int64(id))
+	user, err := h.repo.GetUserById(id)
 	if err != nil {
 		return err
 	}

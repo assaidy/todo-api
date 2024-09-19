@@ -77,12 +77,32 @@ func (h *TodoHandler) HandleGetAllTodosByUser(w http.ResponseWriter, r *http.Req
 		return utils.ForbiddenError()
 	}
 
-	todos, err := h.repo.GetAllTodosByUserId(userId)
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	// Default to page 1 and limit 10 if not specified
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	todos, err := h.repo.GetAllTodosByUserId(userId, limit, offset)
 	if err != nil {
 		return err
 	}
 
-	return utils.WriteJSON(w, http.StatusOK, todos)
+	return utils.WriteJSON(w, http.StatusOK, map[string]any{
+		"data":  todos,
+		"page":  page,
+		"limit": limit,
+		"total": len(todos),
+	})
 }
 
 func (h *TodoHandler) HandleDeleteAllTodosByUser(w http.ResponseWriter, r *http.Request) error {
@@ -120,7 +140,7 @@ func (h *TodoHandler) HandleDeleteTodoById(w http.ResponseWriter, r *http.Reques
 
 	todoId, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	if err := h.repo.DeleteTodoByIdAndUserId(int64(todoId), userId); err != nil {
+	if err := h.repo.DeleteTodoByIdAndUserId(todoId, userId); err != nil {
 		return err
 	}
 
@@ -148,7 +168,7 @@ func (h *TodoHandler) HandleUpdateTodoById(w http.ResponseWriter, r *http.Reques
 	}
 
 	todo := models.Todo{
-		Id:          int64(todoId),
+		Id:          todoId,
 		UserId:      userId,
 		Title:       req.Title,
 		Description: req.Description,

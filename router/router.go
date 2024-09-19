@@ -18,20 +18,19 @@ func NewRouter(r *repo.Repo) http.Handler {
 	todoH := handlers.NewTodoHandler(r)
 
 	router.HandleFunc("/register", utils.Make(userH.HandleRegisterUser)).Methods("POST")
-	router.HandleFunc("/login", utils.Make(userH.HandleLoginUser)).Methods("POST")
+	router.HandleFunc("/login",    utils.Make(userH.HandleLoginUser)).Methods("POST")
 
 	protected.HandleFunc("/users/{id:[0-9+]}", utils.Make(userH.HandleDeleteUserById)).Methods("DELETE")
 	protected.HandleFunc("/users/{id:[0-9+]}", utils.Make(userH.HandleUpdateUserById)).Methods("PUT")
-	protected.HandleFunc("/todos", utils.Make(todoH.HandleCreateTodo)).Methods("POST")
-	protected.HandleFunc("/todos", utils.Make(todoH.HandleGetAllTodosByUser)).Methods("GET")
-	protected.HandleFunc("/todos", utils.Make(todoH.HandleDeleteAllTodosByUser)).Methods("DELETE")
-    protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleDeleteTodoById)).Methods("DELETE")
+	protected.HandleFunc("/todos",             utils.Make(todoH.HandleCreateTodo)).Methods("POST")
+	protected.HandleFunc("/todos",             utils.Make(todoH.HandleGetAllTodosByUser)).Methods("GET")
+	protected.HandleFunc("/todos",             utils.Make(todoH.HandleDeleteAllTodosByUser)).Methods("DELETE")
+	protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleDeleteTodoById)).Methods("DELETE")
 	protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleUpdateTodoById)).Methods("PUT")
-	// // protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleGetTodoById)).Methods("GET")
+	// protected.HandleFunc("/todos/{id:[0-9+]}", utils.Make(todoH.HandleGetTodoById)).Methods("GET")
 
 	return router
 }
 
-// TODO: apply pagging to 'get_all_todos'
 // TODO: apply filtering to 'get_all_todos'
-// make a proper logger middleware
+// TODO: make a proper logger middleware and remove utils.Make(),or just use 'fiber'

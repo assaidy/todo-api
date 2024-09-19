@@ -28,7 +28,7 @@ func New(conn string) (*Repo, error) {
 }
 
 func (r *Repo) InsertUser(user *models.User) error {
-    err := r.DB.QueryRow(QOInsertUser, user.Name, user.Email, user.Password).Scan(&user.Id)
+	err := r.DB.QueryRow(QOInsertUser, user.Name, user.Email, user.Password).Scan(&user.Id)
 	if err != nil {
 		return err
 	}
@@ -36,10 +36,10 @@ func (r *Repo) InsertUser(user *models.User) error {
 	return nil
 }
 
-func (r *Repo) GetUserById(id int64) (*models.User, error) {
+func (r *Repo) GetUserById(id int) (*models.User, error) {
 	user := &models.User{Id: id}
 
-    err := r.DB.QueryRow(QMGetUserById, id).Scan(&user.Name, &user.Email, &user.Password, &user.JoinedAt)
+	err := r.DB.QueryRow(QMGetUserById, id).Scan(&user.Name, &user.Email, &user.Password, &user.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.NotFoundError(fmt.Sprintf("no user with id %d found", id))
@@ -53,7 +53,7 @@ func (r *Repo) GetUserById(id int64) (*models.User, error) {
 func (r *Repo) GetUserByEmail(email string) (*models.User, error) {
 	user := &models.User{Email: email}
 
-    err := r.DB.QueryRow(QMGetUserByEmail, email).Scan(&user.Id, &user.Name, &user.Password, &user.JoinedAt)
+	err := r.DB.QueryRow(QMGetUserByEmail, email).Scan(&user.Id, &user.Name, &user.Password, &user.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.NotFoundError(fmt.Sprintf("no user with email '%s' found", email))
@@ -81,7 +81,7 @@ func (r *Repo) UpdateUser(user *models.User) error {
 	return nil
 }
 
-func (r *Repo) DeleteUserById(id int64) error {
+func (r *Repo) DeleteUserById(id int) error {
 	res, err := r.DB.Exec(QEDeleteUser, id)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func (r *Repo) DeleteUserById(id int64) error {
 }
 
 func (r *Repo) CheckEmailExists(email string) (bool, error) {
-    err := r.DB.QueryRow(QOCheckEmailExists, email).Scan(new(int))
+	err := r.DB.QueryRow(QOCheckEmailExists, email).Scan(new(int))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
@@ -110,8 +110,8 @@ func (r *Repo) CheckEmailExists(email string) (bool, error) {
 	return true, nil
 }
 
-func (r *Repo) CheckUserIdExists(id int64) (bool, error) {
-    err := r.DB.QueryRow(QOCheckUserIdExists, id).Scan(new(int))
+func (r *Repo) CheckUserIdExists(id int) (bool, error) {
+	err := r.DB.QueryRow(QOCheckUserIdExists, id).Scan(new(int))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
@@ -123,7 +123,7 @@ func (r *Repo) CheckUserIdExists(id int64) (bool, error) {
 }
 
 func (r *Repo) InsertTodo(todo *models.Todo) error {
-    err := r.DB.QueryRow(QOInsertTodo, todo.UserId, todo.Title, todo.Description, todo.Status, todo.CreatedAt).Scan(&todo.Id)
+	err := r.DB.QueryRow(QOInsertTodo, todo.UserId, todo.Title, todo.Description, todo.Status, todo.CreatedAt).Scan(&todo.Id)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (r *Repo) UpdateTodo(todo *models.Todo) error {
 	return nil
 }
 
-func (r *Repo) DeleteTodoByIdAndUserId(tid, uid int64) error {
+func (r *Repo) DeleteTodoByIdAndUserId(tid, uid int) error {
 	res, err := r.DB.Exec(QEDeleteTodo, tid, uid)
 	if err != nil {
 		return err
@@ -165,8 +165,8 @@ func (r *Repo) DeleteTodoByIdAndUserId(tid, uid int64) error {
 	return nil
 }
 
-func (r *Repo) DeleteAllTodoByUserId(uid int64) error {
-    _, err := r.DB.Exec(QEDeleteAllTodosByUser, uid)
+func (r *Repo) DeleteAllTodoByUserId(uid int) error {
+	_, err := r.DB.Exec(QEDeleteAllTodosByUser, uid)
 	if err != nil {
 		return err
 	}
@@ -183,10 +183,10 @@ func (r *Repo) DeleteAllTodoByUserId(uid int64) error {
 }
 
 // NOTE: result is sorted by the creation date (most recent first)
-func (r *Repo) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
+func (r *Repo) GetAllTodosByUserId(uid, limit, offset int) ([]*models.Todo, error) {
 	todos := []*models.Todo{}
 
-	rows, err := r.DB.Query(QMGetAllTodosByUser, uid)
+	rows, err := r.DB.Query(QMGetAllTodosByUserWithLimit, uid, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (r *Repo) GetAllTodosByUserId(uid int64) ([]*models.Todo, error) {
 	return todos, nil
 }
 
-// func (pg *PostgresDB) CheckUserOwnsTodo(tid, uid int64) (bool, error) {
+// func (pg *PostgresDB) CheckUserOwnsTodo(tid, uid int) (bool, error) {
 // 	query, err := sqlFiles.ReadFile("queries/todo_check_owner.sql")
 // 	if err != nil {
 // 		return false, err

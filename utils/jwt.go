@@ -38,7 +38,7 @@ func WithJWT(next http.Handler) http.Handler {
 			return
 		}
 
-		userId := int64(userIdFloat) // Convert float64 to int
+		userId := int(userIdFloat) // Convert float64 to int
 
 		// Add userId to context
 		ctx := context.WithValue(r.Context(), userIDKey, userId)
@@ -82,7 +82,7 @@ func parseToken(tokenString string) (jwt.MapClaims, error) {
 }
 
 // CreateToken generates a JWT token for a userId
-func CreateToken(userId int64) (string, error) {
+func CreateToken(userId int) (string, error) {
 	// Replace with your own secret key
 	secretKey := []byte(config.JWTSecret)
 
@@ -108,8 +108,8 @@ func CreateToken(userId int64) (string, error) {
 }
 
 // Retrieve userId from request context
-func GetUserIdFromContext(ctx context.Context) (int64, bool) {
-	userID, ok := ctx.Value(userIDKey).(int64)
+func GetUserIdFromContext(ctx context.Context) (int, bool) {
+	userID, ok := ctx.Value(userIDKey).(int)
 	return userID, ok
 }
 
