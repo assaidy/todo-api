@@ -3,11 +3,11 @@ package utils
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/assaidy/todo-api/config"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -58,11 +58,6 @@ func extractTokenFromHeader(r *http.Request) string {
 
 // Parse and validate the JWT token
 func parseToken(tokenString string) (jwt.MapClaims, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		log.Fatal("failed to load config")
-	}
-
 	// Replace "your-secret-key" with your actual JWT secret key
 	secretKey := []byte(config.JWTSecret)
 
@@ -88,11 +83,6 @@ func parseToken(tokenString string) (jwt.MapClaims, error) {
 
 // CreateToken generates a JWT token for a userId
 func CreateToken(userId int64) (string, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		log.Fatal("failed to load config")
-	}
-
 	// Replace with your own secret key
 	secretKey := []byte(config.JWTSecret)
 

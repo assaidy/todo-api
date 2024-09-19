@@ -7,8 +7,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"github.com/assaidy/todo-api/config"
 	"io"
-	"log"
 )
 
 // Generate a 32-byte key using SHA-256 hash of the given passphrase
@@ -19,11 +19,6 @@ func generateKey(passphrase string) []byte {
 
 // Encrypt a plaintext string using AES-GCM with the given key
 func Encrypt(plaintext string) (string, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		log.Fatal("failed to load config")
-	}
-
 	passphrase := config.JWTSecret
 	key := generateKey(passphrase)
 
@@ -54,11 +49,6 @@ func Encrypt(plaintext string) (string, error) {
 
 // Decrypt a base64-encoded ciphertext string using AES-GCM with the given key
 func Decrypt(ciphertextBase64 string) (string, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		log.Fatal("failed to load config")
-	}
-
 	passphrase := config.JWTSecret
 	key := generateKey(passphrase)
 

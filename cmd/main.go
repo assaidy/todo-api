@@ -7,15 +7,10 @@ import (
 
 	"github.com/assaidy/todo-api/repo"
 	"github.com/assaidy/todo-api/router"
-	"github.com/assaidy/todo-api/utils"
+	"github.com/assaidy/todo-api/config"
 )
 
 func main() {
-	config, err := utils.LoadConfig()
-	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
-	}
-
 	dbConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		config.DBHost,
 		config.DBPort,
