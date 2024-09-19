@@ -207,6 +207,31 @@ func (r *Repo) GetAllTodosByUserId(uid, limit, offset int) ([]*models.Todo, erro
 	return todos, nil
 }
 
+// NOTE: result is sorted by the creation date (most recent first)
+func (r *Repo) GetAllTodosByUserIdWithStatusFilter(uid, limit, offset int, status string) ([]*models.Todo, error) {
+	todos := []*models.Todo{}
+
+	rows, err := r.DB.Query(QMGetAllTodosByUserWithStatusFilter, uid, status, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		t := models.Todo{UserId: uid}
+		if err := rows.Scan(&t.Id, &t.Title, &t.Description, &t.Status, &t.CreatedAt); err != nil {
+			return nil, err
+		}
+		todos = append(todos, &t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return todos, nil
+}
+
 // func (pg *PostgresDB) CheckUserOwnsTodo(tid, uid int) (bool, error) {
 // 	query, err := sqlFiles.ReadFile("queries/todo_check_owner.sql")
 // 	if err != nil {

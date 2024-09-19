@@ -79,6 +79,7 @@ func (h *TodoHandler) HandleGetAllTodosByUser(w http.ResponseWriter, r *http.Req
 
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
+	status := r.URL.Query().Get("status")
 
 	// Default to page 1 and limit 10 if not specified
 	page, err := strconv.Atoi(pageStr)
@@ -89,12 +90,20 @@ func (h *TodoHandler) HandleGetAllTodosByUser(w http.ResponseWriter, r *http.Req
 	if err != nil || limit < 1 {
 		limit = 10
 	}
-
 	offset := (page - 1) * limit
 
-	todos, err := h.repo.GetAllTodosByUserId(userId, limit, offset)
-	if err != nil {
-		return err
+	var todos []*models.Todo
+	switch status {
+	case "todo", "doing", "done":
+		todos, err = h.repo.GetAllTodosByUserIdWithStatusFilter(userId, limit, offset, status)
+		if err != nil {
+			return err
+		}
+	default:
+		todos, err = h.repo.GetAllTodosByUserId(userId, limit, offset)
+		if err != nil {
+			return err
+		}
 	}
 
 	return utils.WriteJSON(w, http.StatusOK, map[string]any{

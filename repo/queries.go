@@ -87,6 +87,21 @@ const (
     LIMIT $2
     OFFSET $3;`
 
+	QMGetAllTodosByUserWithStatusFilter = `
+    -- if limit is negative (-1) it will ignore the limitation 
+    -- and return all possible rows
+    SELECT
+        id,
+        title,
+        description,
+        status,
+        created_at
+    FROM todos
+    WHERE user_id = $1 AND status = $2
+    ORDER BY created_at DESC -- newest first
+    LIMIT $3
+    OFFSET $4;`
+
 	QEUpdateTodo = `
     UPDATE todos
     SET 
