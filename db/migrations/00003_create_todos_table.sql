@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS todos (
     id SERIAL,
     user_id INT NOT NULL,
@@ -9,3 +11,9 @@ CREATE TABLE IF NOT EXISTS todos (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (status) REFERENCES status(name) ON DELETE SET NULL
 );
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE todos;
+-- +goose StatementEnd

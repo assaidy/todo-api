@@ -2,6 +2,7 @@ BIN_DIR = bin
 BIN_FILE = api-server
 CMD_DIR = cmd
 CMD_FILE = main.go
+GOOSE_SETTINGS = GOOSE_DRIVER=postgres GOOSE_DBSTRING="user=postgres dbname=postgres sslmode=disable" GOOSE_MIGRATION_DIR="db/migrations"
 
 all: build
 
@@ -17,3 +18,12 @@ clean:
 	@echo "> cleaning bin dir..."
 	@rm -rf $(BIN_DIR)
 	@echo "> finished cleaning"
+
+up:
+	$(GOOSE_SETTINGS) goose up
+
+down:
+	$(GOOSE_SETTINGS) goose down
+
+reset:
+	$(GOOSE_SETTINGS) goose reset

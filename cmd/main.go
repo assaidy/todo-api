@@ -28,9 +28,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	if err := repo.Migrate(pg.DB); err != nil {
-		log.Fatalf("Failed to apply migrations: %v", err)
-	}
 	defer pg.DB.Close()
 
 	router := router.NewRouter(pg)
