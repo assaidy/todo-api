@@ -93,14 +93,11 @@ func (h *TodoHandler) HandleGetAllTodosByUser(w http.ResponseWriter, r *http.Req
 	offset := (page - 1) * limit
 
 	var todos []*models.Todo
-	switch status {
-	case "todo", "doing", "done":
 	if status != "" {
 		todos, err = h.repo.GetAllTodosByUserIdWithStatusFilter(userId, limit, offset, status)
 		if err != nil {
 			return err
 		}
-	default:
 	} else {
 		todos, err = h.repo.GetAllTodosByUserId(userId, limit, offset)
 		if err != nil {
